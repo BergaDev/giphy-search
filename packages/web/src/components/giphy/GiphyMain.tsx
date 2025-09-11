@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './GiphyMain.module.scss';
+import axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+
+const url = 'https://api.giphy.com/v1/gifs/search';
+const APISearch = async (query: string, limit: number, rating: string): Promise<void> => {
+  const { data } = await axios.get(url, {
+  params: {
+    api_key: import.meta.env.REACT_APP_GIPHY_SEARCH,
+    q: query,
+    limit: limit ||25,
+    rating: rating || 'g',
+  },
+});
+return data;
+};
 
 const GiphyMain = (): JSX.Element => {
   const [query, setQuery] = useState('');
@@ -10,6 +24,9 @@ const GiphyMain = (): JSX.Element => {
 
   const doSearch = async (q: string): Promise<void> => {
     console.log('Searching for:', q);
+    const data = await APISearch(q, 10, 'pg');
+    console.log('Search results:', data);
+
   };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {

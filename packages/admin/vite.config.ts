@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [
     react(),
     EnvironmentPlugin([
+      'REACT_APP_GIPHY_SEARCH',
+      'REACT_APP_GIPHY_KEY',
       'REACT_APP_APP_NAME',
       'REACT_APP_AWS_PROFILE',
       'REACT_APP_API_URL',

@@ -47,6 +47,10 @@ EOF
 
 # Comment below is used to determine where to add new env vars, please do not modify
 # Additional variables are set here
+GIPHY_SEARCH=$(aws ssm get-parameter --name "/GIPHY_SEARCH/$STACK_STAGE/GIPHY_SEARCH" --with-decryption --query 'Parameter.Value' --output text --profile "${AWS_PROFILE}" --region "${REGION}")
+OUTPUT=$(printf "%s\nREACT_APP_GIPHY_SEARCH=%s" "${OUTPUT}" "${GIPHY_SEARCH}")
+GIPHY_KEY=$(aws ssm get-parameter --name "/GIPHY_SEARCH/$STACK_STAGE/GIPHY_KEY" --with-decryption --query 'Parameter.Value' --output text --profile "${AWS_PROFILE}" --region "${REGION}")
+OUTPUT=$(printf "%s\nREACT_APP_GIPHY_KEY=%s" "${OUTPUT}" "${GIPHY_KEY}")
 echo "$OUTPUT" >./packages/web/$OUTPUT_FILENAME
 printf "\033[32m[%s] has been generated successfully!\033[39m\n" "./web/${OUTPUT_FILENAME}"
 echo "$OUTPUT" >./packages/admin/$OUTPUT_FILENAME
