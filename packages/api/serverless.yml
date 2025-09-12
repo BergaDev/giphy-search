@@ -2,10 +2,10 @@ service: ${env:APP_NAME}-api
 
 frameworkVersion: '>=2.0.0 <4.0.0'
 
+# offline is causing issues with deploy, remove from here for now, also not needed hopefully 
 plugins:
   - serverless-esbuild
   - serverless-dynamodb
-  - serverless-offline
 
 custom:
   apiCorsOrigin: '*'
