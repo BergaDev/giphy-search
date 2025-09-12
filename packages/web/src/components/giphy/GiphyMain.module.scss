@@ -69,6 +69,7 @@ $collapseAt: global.$xl;
   border: 1px solid #ccc;
   border-radius: 8px;
   width: 100%;
+  color: #fff;
 }
 
 .formOptions {
@@ -87,4 +88,14 @@ $collapseAt: global.$xl;
   justify-content: space-between;
   padding: 16px;
   width: 30%;
+}
+
+.pageSwitcher {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  width: 30%;
+  gap: 8px;
 }

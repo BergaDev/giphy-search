@@ -4,7 +4,7 @@ import styles from './GiphyMain.module.scss';
 import axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar } from '@mui/material';
+import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography } from '@mui/material';
 import { ContentCopy, OpenInNew, MoreVert } from '@mui/icons-material';
 
 //Part of searchReponse
@@ -65,6 +65,34 @@ const GiphyMain = (): JSX.Element => {
 
   //Results limit 
   const [resultLimit, setResultLimit] = useState(10);
+  //Modal control for image preview 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+
+  const modalStyle = {
+    position: 'absolute' as const,
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    bgcolor: 'background.paper',
+    boxShadow: 24,
+    p: 2,
+    outline: 'none',
+    maxWidth: '90vw',
+    maxHeight: '90vh',
+  };
+
+  const openImageModal = (url: string) => {
+    setModalImageUrl(url);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalImageUrl(null);
+  };
+  //Page switcher
+  const [pageWindowStart, setPageWindowStart] = useState(0);
 
   const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setResultLimit(parseInt(e.target.value) || 10);
@@ -105,6 +133,7 @@ const GiphyMain = (): JSX.Element => {
     console.log('Formed response:', mappedResponse);
     //Store the first limit to currentCountPos
     setGifResponse(mappedResponse);
+    setPageWindowStart(0);
   };
 
   //Function the button calls with qury
@@ -124,7 +153,7 @@ const GiphyMain = (): JSX.Element => {
     if (backwards && limit > resultLimit) {
       offset = offset - resultLimit;
     }
-    if (selectedPage) {
+    if (selectedPage !== undefined && selectedPage !== null) {
       offset = (selectedPage - 1) * resultLimit;
     }
     const newResponse = await APISearch(q, limit, 'pg', offset);
@@ -184,6 +213,7 @@ const GiphyMain = (): JSX.Element => {
         currentPage: 0,
       },
     });
+    setPageWindowStart(0);
   };
 
   return (
@@ -223,10 +253,52 @@ const GiphyMain = (): JSX.Element => {
         </form> 
 
         <div className={styles.gifResultContainer}>
-            <div className={styles.resultSwitcher}>
-                <Button variant="outlined" onClick={handleNextPage}>Next Page</Button>
-                <Button variant="outlined" onClick={handlePreviousPage}>Previous Page</Button>
-                <h2>Page {gifResponse.pagination.currentPage}</h2>
+            {/* Page Switcher */}
+            {/* ATM only shows first 8 pages, keep or adjust to go with display size to expand */}
+            <div className={styles.pageSwitcher}>
+                {pageWindowStart > 0 ? (
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const prevStart = Math.max(0, pageWindowStart - 4);
+                      setPageWindowStart(prevStart);
+                    }}
+                  >
+                    Prev...
+                  </Button>
+                ) : null}
+                {Array.from({ length: Math.max(0, Math.min((gifResponse.pagination.pages ?? 0) - pageWindowStart, 8)) }, (_, idx) => pageWindowStart + idx + 1)
+                  .map((page) => (
+                    <Button
+                      key={page}
+                      variant="outlined"
+                      onClick={() => handlePageChange(query, false, true, page)}
+                      disabled={gifResponse.pagination.currentPage === page}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                {(gifResponse.pagination.pages ?? 0) > pageWindowStart + 8 ? (
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const totalPages = gifResponse.pagination.pages ?? 0;
+                      const nextStart = pageWindowStart + 4;
+                      const maxStart = Math.max(0, totalPages - 8);
+                      setPageWindowStart(Math.min(nextStart, maxStart));
+                    }}
+                  >
+                    More...
+                  </Button>
+                ) : null}
+                {(gifResponse.pagination.pages ?? 0) > pageWindowStart + 8 && (
+                  <Button
+                    variant="outlined"
+                    onClick={() => handlePageChange(query, false, false, gifResponse.pagination.pages)}
+                  >
+                    ({gifResponse.pagination.pages})
+                  </Button>
+                )}
             </div>
             <ImageList sx={{ width: '90%', height: 450 }} cols={3} rowHeight={164}>
                 {gifResponse.data.map((item) => (
@@ -237,16 +309,17 @@ const GiphyMain = (): JSX.Element => {
                         alt={item.title}
                         title={item.title}
                         loading="lazy"
+                        onClick={() => openImageModal(item.images.fixed_height.url)}
+                        style={{ cursor: 'pointer' }}
                     />
                     <ImageListItemBar 
                     title={item.title}
-                    position="below"
                     actionIcon={
                         <>
-                            <IconButton onClick={() => handleCopy(item.images.fixed_height.url)}>
+                            <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
                                 <ContentCopy />
                             </IconButton>
-                            <IconButton onClick={() => handleOpen(item.images.fixed_height.url)}>
+                            <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
                                 <OpenInNew />
                             </IconButton>
                         </>
@@ -273,6 +346,21 @@ const GiphyMain = (): JSX.Element => {
           GIF link copied to clipboard!
         </Alert>
       </Snackbar>
+      <Modal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        aria-labelledby="modal-title"
+      >
+        <Box sx={modalStyle}>
+          {modalImageUrl ? (
+            <img
+              src={modalImageUrl}
+              alt="GIF preview"
+              style={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', margin: '0 auto' }}
+            />
+          ) : null}
+        </Box>
+      </Modal>
     </div>
   );
 };
