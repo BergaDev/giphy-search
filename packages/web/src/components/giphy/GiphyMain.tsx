@@ -4,7 +4,7 @@ import styles from './GiphyMain.module.scss';
 import axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import { IconButton, ImageList, ImageListItem, ImageListItemBar } from '@mui/material';
+import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar } from '@mui/material';
 import { ContentCopy, OpenInNew } from '@mui/icons-material';
 
 //Part of searchReponse
@@ -47,6 +47,7 @@ return data;
 const GiphyMain = (): JSX.Element => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCopyAlert, setShowCopyAlert] = useState(false);
   const [res, setRes] = useState<searchResponseGiphy>({
     data: [],
     pagination: {
@@ -91,11 +92,21 @@ const GiphyMain = (): JSX.Element => {
   };
 
   const handleCopy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+      setShowCopyAlert(true);
+    } catch (error) {
+      console.error('Failed to copy link: ', error);
+    }
   };
 
   const handleOpen = async (text: string) => {
     await window.open(text, '_blank');
+  };
+
+  //Notif handler - copy
+  const handleCloseCopyAlert = () => {
+    setShowCopyAlert(false);
   };
 
   return (
@@ -147,6 +158,22 @@ const GiphyMain = (): JSX.Element => {
 
         </div>
       </div>
+      
+      <Snackbar
+        open={showCopyAlert}
+        autoHideDuration={3000}
+        onClose={handleCloseCopyAlert}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseCopyAlert} 
+          severity="success" 
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          GIF link copied to clipboard!
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
