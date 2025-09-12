@@ -23,6 +23,7 @@ interface singleGif {
 interface searchResponseGiphy {
     data: singleGif[];
     pagination: {
+        limit: number;
         count: number;
         total_count: number;
         offset: number;
@@ -49,14 +50,11 @@ const GiphyMain = (): JSX.Element => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCopyAlert, setShowCopyAlert] = useState(false);
-
-  //Results limit 
-  const [resultLimit, setResultLimit] = useState(10);
-
-  //Set the full response data
-  const [res, setRes] = useState<searchResponseGiphy>({
+  //Set response here
+  const [gifResponse, setGifResponse] = useState<searchResponseGiphy>({
     data: [],
     pagination: {
+      limit: 0,
       count: 0,
       total_count: 0,
       offset: 0,
@@ -65,15 +63,15 @@ const GiphyMain = (): JSX.Element => {
     },
   });
 
+  //Results limit 
+  const [resultLimit, setResultLimit] = useState(10);
+
   const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setResultLimit(parseInt(e.target.value) || 10);
   };
 
-  //Function the button calls with qury
-  const doSearch = async (q: string): Promise<void> => {
-    console.log('Searching for:', q);
-    const res = await APISearch(q, resultLimit, 'pg');
-    console.log('Search results:', res);
+  //Handle response mapping and pagination calculation
+  const handleResponse = (res: any): void => {
     //Mapping each gif to singleGif
     //Changed to pass all images in array, need to impliment some form of selection
     const items: singleGif[] = res.data.map((item) => ({
@@ -98,13 +96,39 @@ const GiphyMain = (): JSX.Element => {
       data: items,
       pagination: {
         ...res.pagination,
+        limit: items.length,
         pages: totalPages,
         currentPage: currentPage,
       },
     };
     console.log('Items:', items);
     console.log('Formed response:', mappedResponse);
-    setRes(mappedResponse);
+    //Store the first limit to currentCountPos
+    setGifResponse(mappedResponse);
+  };
+
+  //Function the button calls with qury
+  const doSearch = async (q: string): Promise<void> => {
+    const res = await APISearch(q, resultLimit, 'pg');
+    handleResponse(res);
+  };
+
+
+  const handlePageChange = async (q: string, fowards?: boolean, backwards?: boolean, selectedPage?: number): Promise<void> => {
+    console.log('current vars: ', q, fowards, backwards);
+    let limit = gifResponse.pagination.limit;
+    let offset = gifResponse.pagination.offset;
+    if (fowards) {
+      offset = offset + resultLimit;
+    }
+    if (backwards && limit > resultLimit) {
+      offset = offset - resultLimit;
+    }
+    if (selectedPage) {
+      offset = (selectedPage - 1) * resultLimit;
+    }
+    const newResponse = await APISearch(q, limit, 'pg', offset);
+    handleResponse(newResponse);
   };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -113,6 +137,7 @@ const GiphyMain = (): JSX.Element => {
     if (!trimmed) return;
     setLoading(true);
     try {
+      clearPreviousSearch();
       await doSearch(trimmed);
     } finally {
       setLoading(false);
@@ -135,6 +160,30 @@ const GiphyMain = (): JSX.Element => {
   //Notif handler - copy
   const handleCloseCopyAlert = () => {
     setShowCopyAlert(false);
+  };
+
+  //+1 page
+  const handleNextPage = () => {
+    handlePageChange(query, true, false);
+  };
+
+  //-1 page
+  const handlePreviousPage = () => {
+    handlePageChange(query, false, true);
+  };
+
+  const clearPreviousSearch = () => {
+    setGifResponse({
+      data: [],
+      pagination: {
+        limit: 0,
+        count: 0,
+        total_count: 0,
+        offset: 0,
+        pages: 0,
+        currentPage: 0,
+      },
+    });
   };
 
   return (
@@ -175,10 +224,12 @@ const GiphyMain = (): JSX.Element => {
 
         <div className={styles.gifResultContainer}>
             <div className={styles.resultSwitcher}>
-                <Button variant="outlined">Next Page</Button>
+                <Button variant="outlined" onClick={handleNextPage}>Next Page</Button>
+                <Button variant="outlined" onClick={handlePreviousPage}>Previous Page</Button>
+                <h2>Page {gifResponse.pagination.currentPage}</h2>
             </div>
             <ImageList sx={{ width: '90%', height: 450 }} cols={3} rowHeight={164}>
-                {res.data.map((item) => (
+                {gifResponse.data.map((item) => (
                     <ImageListItem key={item.id}>
                     <img
                         srcSet={`${item.images.fixed_height.url}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
@@ -191,11 +242,14 @@ const GiphyMain = (): JSX.Element => {
                     title={item.title}
                     position="below"
                     actionIcon={
-                        <IconButton>
-                            <ContentCopy onClick={() => handleCopy(item.images.fixed_height.url)} />
-                            <OpenInNew onClick={() => handleOpen(item.images.fixed_height.url)} />
-                        </IconButton>
-                        
+                        <>
+                            <IconButton onClick={() => handleCopy(item.images.fixed_height.url)}>
+                                <ContentCopy />
+                            </IconButton>
+                            <IconButton onClick={() => handleOpen(item.images.fixed_height.url)}>
+                                <OpenInNew />
+                            </IconButton>
+                        </>
                     }
                     />
                     </ImageListItem>
