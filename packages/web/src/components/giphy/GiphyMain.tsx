@@ -4,7 +4,8 @@ import styles from './GiphyMain.module.scss';
 import axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography } from '@mui/material';
+import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { ContentCopy, OpenInNew, MoreVert } from '@mui/icons-material';
 
 //Part of searchReponse
@@ -191,16 +192,6 @@ const GiphyMain = (): JSX.Element => {
     setShowCopyAlert(false);
   };
 
-  //+1 page
-  const handleNextPage = () => {
-    handlePageChange(query, true, false);
-  };
-
-  //-1 page
-  const handlePreviousPage = () => {
-    handlePageChange(query, false, true);
-  };
-
   const clearPreviousSearch = () => {
     setGifResponse({
       data: [],
@@ -253,81 +244,92 @@ const GiphyMain = (): JSX.Element => {
         </form> 
 
         <div className={styles.gifResultContainer}>
-            {/* Page Switcher */}
-            {/* ATM only shows first 8 pages, keep or adjust to go with display size to expand */}
-            <div className={styles.pageSwitcher}>
-                {pageWindowStart > 0 ? (
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      const prevStart = Math.max(0, pageWindowStart - 4);
-                      setPageWindowStart(prevStart);
-                    }}
-                  >
-                    Prev...
-                  </Button>
-                ) : null}
-                {Array.from({ length: Math.max(0, Math.min((gifResponse.pagination.pages ?? 0) - pageWindowStart, 8)) }, (_, idx) => pageWindowStart + idx + 1)
-                  .map((page) => (
-                    <Button
-                      key={page}
-                      variant="outlined"
-                      onClick={() => handlePageChange(query, false, true, page)}
-                      disabled={gifResponse.pagination.currentPage === page}
-                    >
-                      {page}
-                    </Button>
-                  ))}
-                {(gifResponse.pagination.pages ?? 0) > pageWindowStart + 8 ? (
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      const totalPages = gifResponse.pagination.pages ?? 0;
-                      const nextStart = pageWindowStart + 4;
-                      const maxStart = Math.max(0, totalPages - 8);
-                      setPageWindowStart(Math.min(nextStart, maxStart));
-                    }}
-                  >
-                    More...
-                  </Button>
-                ) : null}
-                {(gifResponse.pagination.pages ?? 0) > pageWindowStart + 8 && (
-                  <Button
-                    variant="outlined"
-                    onClick={() => handlePageChange(query, false, false, gifResponse.pagination.pages)}
-                  >
-                    ({gifResponse.pagination.pages})
-                  </Button>
-                )}
-            </div>
-            <ImageList sx={{ width: '90%', height: 450 }} cols={3} rowHeight={164}>
-                {gifResponse.data.map((item) => (
-                    <ImageListItem key={item.id}>
-                    <img
-                        srcSet={`${item.images.fixed_height.url}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
-                        src={`${item.images.fixed_height.url}?w=164&h=164&fit=crop&auto=format`}
-                        alt={item.title}
+            {/** Columns are based on the viewport */}
+            {(() => {
+              const theme = useTheme();
+              const isLgUp = useMediaQuery(theme.breakpoints.up('lg'));
+              const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+              const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
+              const cols = isLgUp ? 4 : isMdUp ? 3 : isSmUp ? 2 : 1;
+              return (
+                <>
+                {/* Page Switcher */}
+                {/* ATM only shows first 8 pages, keep or adjust to go with display size to expand */}
+                <div className={styles.pageSwitcher}>
+                    {pageWindowStart > 0 ? (
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          const prevStart = Math.max(0, pageWindowStart - 4);
+                          setPageWindowStart(prevStart);
+                        }}
+                      >
+                        Prev...
+                      </Button>
+                    ) : null}
+                    {Array.from({ length: Math.max(0, Math.min((gifResponse.pagination.pages ?? 0) - pageWindowStart, 8)) }, (_, idx) => pageWindowStart + idx + 1)
+                      .map((page) => (
+                        <Button
+                          key={page}
+                          variant="outlined"
+                          onClick={() => handlePageChange(query, false, true, page)}
+                          disabled={gifResponse.pagination.currentPage === page}
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                    {(gifResponse.pagination.pages ?? 0) > pageWindowStart + 8 ? (
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          const totalPages = gifResponse.pagination.pages ?? 0;
+                          const nextStart = pageWindowStart + 4;
+                          const maxStart = Math.max(0, totalPages - 8);
+                          setPageWindowStart(Math.min(nextStart, maxStart));
+                        }}
+                      >
+                        More...
+                      </Button>
+                    ) : null}
+                    {(gifResponse.pagination.pages ?? 0) > pageWindowStart + 8 && (
+                      <Button
+                        variant="outlined"
+                        onClick={() => handlePageChange(query, false, false, gifResponse.pagination.pages)}
+                      >
+                        ({gifResponse.pagination.pages})
+                      </Button>
+                    )}
+                </div>
+                <ImageList sx={{ width: '100%' }} variant="masonry" cols={cols} gap={8}>
+                    {gifResponse.data.map((item) => (
+                        <ImageListItem key={item.id}>
+                        <img
+                            src={item.images.fixed_height.url}
+                            alt={item.title}
+                            title={item.title}
+                            loading="lazy"
+                            onClick={() => openImageModal(item.images.fixed_height.url)}
+                            style={{ cursor: 'pointer', width: '100%', height: 'auto', display: 'block', borderRadius: 4 }}
+                        />
+                        <ImageListItemBar 
                         title={item.title}
-                        loading="lazy"
-                        onClick={() => openImageModal(item.images.fixed_height.url)}
-                        style={{ cursor: 'pointer' }}
-                    />
-                    <ImageListItemBar 
-                    title={item.title}
-                    actionIcon={
-                        <>
-                            <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
-                                <ContentCopy />
-                            </IconButton>
-                            <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
-                                <OpenInNew />
-                            </IconButton>
-                        </>
-                    }
-                    />
-                    </ImageListItem>
-                ))}
-            </ImageList>
+                        actionIcon={
+                            <>
+                                <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
+                                    <ContentCopy />
+                                </IconButton>
+                                <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
+                                    <OpenInNew />
+                                </IconButton>
+                            </>
+                        }
+                        />
+                        </ImageListItem>
+                    ))}
+                </ImageList>
+                </>
+              );
+            })()}
         </div>
       </div>
       
