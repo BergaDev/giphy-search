@@ -10,7 +10,11 @@ import { ImageList, ImageListItem } from '@mui/material';
 //Object reduced for simplicity
 interface singleGif {
     id: string;
-    embed_url: string;
+    images: {
+        fixed_height: {
+            url: string;
+        };
+    };
     title: string;
 }
 
@@ -42,6 +46,14 @@ return data;
 const GiphyMain = (): JSX.Element => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState<searchResponseGiphy>({
+    data: [],
+    pagination: {
+      limit: 0,
+      total_count: 0,
+      offset: 0,
+    },
+  });
 
   //Function the button calls with qury
   const doSearch = async (q: string): Promise<void> => {
@@ -49,11 +61,11 @@ const GiphyMain = (): JSX.Element => {
     const res = await APISearch(q, 10, 'pg');
     console.log('Search results:', res);
     //Mapping each gif to singleGif
-    //TODO: Change from embed url, does return a gif but want to choose more with the images array
+    //Changed to pass all images in array, need to impliment some form of selection
     const items: singleGif[] = res.data.map((item) => ({
       id: item.id,
-      embed_url: item.embed_url,
-      title: item.title,
+      images: item.images,
+      title: item.title || 'No title provided',
     }));
     //Adding gif items and pagination to full response 
     const mappedResponse: searchResponseGiphy = {
@@ -62,7 +74,7 @@ const GiphyMain = (): JSX.Element => {
     };
     console.log('Items:', items);
     console.log('Formed response:', mappedResponse);
-
+    setRes(mappedResponse);
   };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -97,6 +109,22 @@ const GiphyMain = (): JSX.Element => {
             {loading ? 'Searching…' : 'Search'}
           </Button>
         </form> 
+
+        <div className={styles.images}>
+        <ImageList sx={{ width: '90%', height: 450 }} cols={3} rowHeight={164}>
+            {res.data.map((item) => (
+                <ImageListItem key={item.id}>
+                <img
+                    srcSet={`${item.images.fixed_height.url}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                    src={`${item.images.fixed_height.url}?w=164&h=164&fit=crop&auto=format`}
+                    alt={item.title}
+                    loading="lazy"
+                />
+                </ImageListItem>
+            ))}
+            </ImageList>
+
+        </div>
       </div>
     </div>
   );
