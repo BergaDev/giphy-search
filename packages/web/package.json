@@ -24,6 +24,7 @@
     "@baseline/types": "workspace:1.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "@vitejs/plugin-react": "4.3.4",
     "axios": "1.7.7",

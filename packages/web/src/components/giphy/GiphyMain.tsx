@@ -4,7 +4,8 @@ import styles from './GiphyMain.module.scss';
 import axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import { ImageList, ImageListItem } from '@mui/material';
+import { IconButton, ImageList, ImageListItem, ImageListItemBar } from '@mui/material';
+import { ContentCopy, OpenInNew } from '@mui/icons-material';
 
 //Part of searchReponse
 //Object reduced for simplicity
@@ -89,6 +90,14 @@ const GiphyMain = (): JSX.Element => {
     }
   };
 
+  const handleCopy = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+  };
+
+  const handleOpen = async (text: string) => {
+    await window.open(text, '_blank');
+  };
+
   return (
     <div className={styles.giphyMain}>
       <div className={styles.content}>
@@ -118,7 +127,19 @@ const GiphyMain = (): JSX.Element => {
                     srcSet={`${item.images.fixed_height.url}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
                     src={`${item.images.fixed_height.url}?w=164&h=164&fit=crop&auto=format`}
                     alt={item.title}
+                    title={item.title}
                     loading="lazy"
+                />
+                <ImageListItemBar 
+                title={item.title}
+                position="below"
+                actionIcon={
+                    <IconButton>
+                        <ContentCopy onClick={() => handleCopy(item.images.fixed_height.url)} />
+                        <OpenInNew onClick={() => handleOpen(item.images.fixed_height.url)} />
+                    </IconButton>
+                    
+                }
                 />
                 </ImageListItem>
             ))}
