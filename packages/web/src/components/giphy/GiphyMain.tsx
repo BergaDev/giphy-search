@@ -6,7 +6,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography, useMediaQuery, Autocomplete, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { ContentCopy, OpenInNew, MoreVert } from '@mui/icons-material';
+import { ContentCopy, OpenInNew, MoreVert, Close } from '@mui/icons-material';
 
 //Part of searchReponse
 //Object reduced for simplicity
@@ -14,6 +14,9 @@ interface singleGif {
     id: string;
     images: {
         fixed_height: {
+            url: string;
+        };
+        original: {
             url: string;
         };
     };
@@ -103,7 +106,7 @@ const GiphyMain = (): JSX.Element => {
   };
 
   //Handle response mapping and pagination calculation
-  const handleResponse = (res: any): void => {
+  const handleResponse = (res: any, isNewSearch: boolean = false): void => {
     //Mapping each gif to singleGif
     //Changed to pass all images in array, need to impliment some form of selection
     const items: singleGif[] = res.data.map((item) => ({
@@ -137,14 +140,22 @@ const GiphyMain = (): JSX.Element => {
     console.log('Formed response:', mappedResponse);
     //Store the first limit to currentCountPos
     setGifResponse(mappedResponse);
-    setPageWindowStart(0);
+    
+    //Change to handle new search
+    if (isNewSearch) {
+      setPageWindowStart(0);
+    } else {
+      //Update for same search (so that I dont just reset each time)
+      const newPageWindowStart = Math.max(0, Math.min(currentPage - 5, totalPages - 8));
+      setPageWindowStart(newPageWindowStart);
+    }
   };
 
   //Function the button calls with qury
   const doSearch = async (q: string): Promise<void> => {
     const res = await APISearch(q, resultLimit, rating, lowContrast);
     console.log('Input items: ', resultLimit, rating, lowContrast);
-    handleResponse(res);
+    handleResponse(res, true);
   };
 
 
@@ -156,7 +167,7 @@ const GiphyMain = (): JSX.Element => {
       offset = (selectedPage - 1) * resultLimit;
     }
     const newResponse = await APISearch(q, limit, rating, lowContrast, offset);
-    handleResponse(newResponse);
+    handleResponse(newResponse, false);
   };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -336,7 +347,7 @@ const GiphyMain = (): JSX.Element => {
                             alt={item.title}
                             title={item.title}
                             loading="lazy"
-                            onClick={() => openImageModal(item.images.fixed_height.url)}
+                            onClick={() => openImageModal(item.images.original.url)}
                             style={{ cursor: 'pointer', width: '100%', height: 'auto', display: 'block', borderRadius: 4 }}
                         />
                         <ImageListItemBar 
@@ -382,10 +393,15 @@ const GiphyMain = (): JSX.Element => {
         aria-labelledby="modal-title"
       >
         <Box sx={modalStyle}>
+          <IconButton
+            onClick={handleCloseModal}
+          >
+            <Close />
+          </IconButton>
           {modalImageUrl ? (
             <img
               src={modalImageUrl}
-              alt="GIF preview"
+              alt="GIF preview" 
               style={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', margin: '0 auto' }}
             />
           ) : null}

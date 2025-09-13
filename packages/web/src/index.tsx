@@ -3,9 +3,12 @@ import * as ReactDOM from 'react-dom/client';
 import './index.scss';
 import './styles/fonts.scss';
 import App from './App';
+import ThemeProvider from './theme/ThemeProvider';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 );
