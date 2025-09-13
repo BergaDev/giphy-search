@@ -219,26 +219,29 @@ const GiphyMain = (): JSX.Element => {
   return (
     <div className={styles.giphyMain}>
       <div className={styles.content}>
-        <h1>Gif Search</h1>
+        <h1 className={styles.title}>Gif Search</h1>
         <div className={styles.formOptions}>
           <form onSubmit={handleSubmit}>
-            <TextField
-              id="main-search"
-              label="GIF Search"
-              variant="outlined"
-              type="search"
-              name="q"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoComplete="off"
-            />
-            <Button variant="outlined" startIcon={<MoreVert />} onClick={handleMoreOptions}>
-              More Options
-            </Button>
-            <Button variant="contained" type="submit" disabled={loading}>
-              {loading ? 'Searching…' : 'Search'}
-            </Button>
-              
+            <div className={styles['search-row']}>
+              <TextField
+                id="main-search"
+                label="GIF Search"
+                variant="outlined"
+                type="search"
+                name="q"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoComplete="off"
+                sx={{ minWidth: 300 }}
+              />
+              <Button variant="outlined" startIcon={<MoreVert />} onClick={handleMoreOptions}>
+                More Options
+              </Button>
+              <Button variant="contained" type="submit" disabled={loading}>
+                {loading ? 'Searching…' : 'Search'}
+              </Button>
+            </div>
+            
             <div className={styles.moreOptions}>
               <Autocomplete
                 options={["10", "20", "30", "40", "50"]}
@@ -247,7 +250,7 @@ const GiphyMain = (): JSX.Element => {
                   const limit = parseInt(value || "10");
                   setResultLimit(Math.min(50, limit));
                 }}
-                renderInput={(params) => <TextField {...params} label="Limit" />}
+                renderInput={(params) => <TextField {...params} label="Per Page" sx={{ minWidth: 120 }} />}
               />
               <Autocomplete
                 options={[" 🟩 G", "🟨 PG", "🟧 PG-13", " 🌶️ R"]}
@@ -258,7 +261,7 @@ const GiphyMain = (): JSX.Element => {
                   const properFormat = cleanValue.toLowerCase();
                   setRating(properFormat);
                 }}
-                renderInput={(params) => <TextField {...params} label="Rating" />}
+                renderInput={(params) => <TextField {...params} label="Rating" sx={{ minWidth: 150 }} />}
               />
               <FormGroup>
                 <FormControlLabel control={<Checkbox />} label="Low Contrast" onChange={(event) => setLowContrast((event.target as HTMLInputElement).checked)} />

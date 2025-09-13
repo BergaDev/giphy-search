@@ -4,8 +4,7 @@ import About from './pages/About';
 import Home from './pages/Home';
 
 const router = createBrowserRouter([
-  { path: '/', element: <Home /> },
-  { path: '/about', element: <About /> },
+  { path: '/', element: <Home /> }
 ]);
 
 const App = () => <RouterProvider router={router} />;

@@ -16,9 +16,7 @@ const PageWrapper = (props: Props): JSX.Element => {
       <Helmet>
         <title>{title ? `${title} | Giphy Search` : 'Giphy Search'}</title>
       </Helmet>
-      <Navbar />
       {children}
-      <Footer />
     </>
   );
 };
