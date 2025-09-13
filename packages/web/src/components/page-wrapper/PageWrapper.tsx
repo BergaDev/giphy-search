@@ -14,7 +14,7 @@ const PageWrapper = (props: Props): JSX.Element => {
   return (
     <>
       <Helmet>
-        <title>{title ? `${title} | Baseline Core` : 'Baseline Core'}</title>
+        <title>{title ? `${title} | Giphy Search` : 'Giphy Search'}</title>
       </Helmet>
       <Navbar />
       {children}

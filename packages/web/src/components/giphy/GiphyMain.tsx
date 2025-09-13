@@ -4,7 +4,7 @@ import styles from './GiphyMain.module.scss';
 import axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography, useMediaQuery } from '@mui/material';
+import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography, useMediaQuery, Autocomplete, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { ContentCopy, OpenInNew, MoreVert } from '@mui/icons-material';
 
@@ -34,13 +34,14 @@ interface searchResponseGiphy {
 }
 
 const url = 'https://api.giphy.com/v1/gifs/search';
-const APISearch = async (query: string, limit: number, rating: string, offset?: number): Promise<searchResponseGiphy> => {
+const APISearch = async (query: string, limit: number, rating: string, lowContrast?: boolean, offset?: number): Promise<searchResponseGiphy> => {
   const { data } = await axios.get(url, {
   params: {
     api_key: import.meta.env.REACT_APP_GIPHY_SEARCH,
     q: query,
     limit: limit ||25,
     rating: rating || 'g',
+    remove_low_contrast: lowContrast || false,
     offset: offset || 0,
   },
 });
@@ -64,8 +65,10 @@ const GiphyMain = (): JSX.Element => {
     },
   });
 
-  //Results limit 
+  //Optional vars for search
   const [resultLimit, setResultLimit] = useState(10);
+  const [rating, setRating] = useState("g");
+  const [lowContrast, setLowContrast] = useState(false);
   //Modal control for image preview 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
@@ -139,25 +142,20 @@ const GiphyMain = (): JSX.Element => {
 
   //Function the button calls with qury
   const doSearch = async (q: string): Promise<void> => {
-    const res = await APISearch(q, resultLimit, 'pg');
+    const res = await APISearch(q, resultLimit, rating, lowContrast);
+    console.log('Input items: ', resultLimit, rating, lowContrast);
     handleResponse(res);
   };
 
 
-  const handlePageChange = async (q: string, fowards?: boolean, backwards?: boolean, selectedPage?: number): Promise<void> => {
-    console.log('current vars: ', q, fowards, backwards);
+  const handlePageChange = async (q: string, selectedPage?: number): Promise<void> => {
+    console.log('current vars: ', q, selectedPage);
     let limit = gifResponse.pagination.limit;
     let offset = gifResponse.pagination.offset;
-    if (fowards) {
-      offset = offset + resultLimit;
-    }
-    if (backwards && limit > resultLimit) {
-      offset = offset - resultLimit;
-    }
     if (selectedPage !== undefined && selectedPage !== null) {
       offset = (selectedPage - 1) * resultLimit;
     }
-    const newResponse = await APISearch(q, limit, 'pg', offset);
+    const newResponse = await APISearch(q, limit, rating, lowContrast, offset);
     handleResponse(newResponse);
   };
 
@@ -207,41 +205,67 @@ const GiphyMain = (): JSX.Element => {
     setPageWindowStart(0);
   };
 
+  //Hide or show the extra options 
+  const handleMoreOptions = () => {
+    const moreOptionsElement = document.querySelector(`.${styles.moreOptions}`) as HTMLElement;
+    const currentDisplay = window.getComputedStyle(moreOptionsElement).display === 'none';
+    if (currentDisplay) {
+      moreOptionsElement.style.display = 'flex';
+    } else {
+      moreOptionsElement.style.display = 'none';
+    }
+  };
+
   return (
     <div className={styles.giphyMain}>
       <div className={styles.content}>
         <h1>Gif Search</h1>
-        
-        <form onSubmit={handleSubmit} className={styles.formOptions}>
-          <TextField
-            id="main-search"
-            label="GIF Search"
-            variant="outlined"
-            type="search"
-            name="q"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoComplete="off"
-          />
-          <Button variant="outlined" startIcon={<MoreVert />}>
-            More Options
-          </Button>
-          <Button variant="contained" type="submit" disabled={loading}>
-            {loading ? 'Searching…' : 'Search'}
-          </Button>
-            
-          <div className={styles.moreOptions}>
+        <div className={styles.formOptions}>
+          <form onSubmit={handleSubmit}>
             <TextField
-              id="resultLimit"
-              label="Limit"
+              id="main-search"
+              label="GIF Search"
               variant="outlined"
-              type="text"
-              name="resultLimit"
-              value={resultLimit}
-              onChange={handleLimitChange}
+              type="search"
+              name="q"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoComplete="off"
             />
-          </div>
-        </form> 
+            <Button variant="outlined" startIcon={<MoreVert />} onClick={handleMoreOptions}>
+              More Options
+            </Button>
+            <Button variant="contained" type="submit" disabled={loading}>
+              {loading ? 'Searching…' : 'Search'}
+            </Button>
+              
+            <div className={styles.moreOptions}>
+              <Autocomplete
+                options={["10", "20", "30", "40", "50"]}
+                value={resultLimit.toString()}
+                onChange={(event, value) => {
+                  const limit = parseInt(value || "10");
+                  setResultLimit(Math.min(50, limit));
+                }}
+                renderInput={(params) => <TextField {...params} label="Limit" />}
+              />
+              <Autocomplete
+                options={[" 🟩 G", "🟨 PG", "🟧 PG-13", " 🌶️ R"]}
+                value={rating}
+                onChange={(event, value) => {
+                  // Remove emoji before setting the rating
+                  const cleanValue = (value || "🟩 G").replace(/[^\w\s-]/g, '').trim();
+                  const properFormat = cleanValue.toLowerCase();
+                  setRating(properFormat);
+                }}
+                renderInput={(params) => <TextField {...params} label="Rating" />}
+              />
+              <FormGroup>
+                <FormControlLabel control={<Checkbox />} label="Low Contrast" onChange={(event) => setLowContrast((event.target as HTMLInputElement).checked)} />
+              </FormGroup>
+            </div>
+          </form> 
+        </div>
 
         <div className={styles.gifResultContainer}>
             {/** Columns are based on the viewport */}
@@ -272,7 +296,7 @@ const GiphyMain = (): JSX.Element => {
                         <Button
                           key={page}
                           variant="outlined"
-                          onClick={() => handlePageChange(query, false, true, page)}
+                          onClick={() => handlePageChange(query, page)}
                           disabled={gifResponse.pagination.currentPage === page}
                         >
                           {page}
@@ -294,12 +318,13 @@ const GiphyMain = (): JSX.Element => {
                     {(gifResponse.pagination.pages ?? 0) > pageWindowStart + 8 && (
                       <Button
                         variant="outlined"
-                        onClick={() => handlePageChange(query, false, false, gifResponse.pagination.pages)}
+                        onClick={() => handlePageChange(query, gifResponse.pagination.pages)}
                       >
                         ({gifResponse.pagination.pages})
                       </Button>
                     )}
                 </div>
+                {/* GIF Previews */}
                 <ImageList sx={{ width: '100%' }} variant="masonry" cols={cols} gap={8}>
                     {gifResponse.data.map((item) => (
                         <ImageListItem key={item.id}>
