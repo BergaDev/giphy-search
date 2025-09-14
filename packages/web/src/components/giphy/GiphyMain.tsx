@@ -65,10 +65,6 @@ const GiphyMain = (): JSX.Element => {
   //Page switcher
   const [pageWindowStart, setPageWindowStart] = useState(0);
 
-  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setResultLimit(parseInt(e.target.value) || 10);
-  };
-
   //Handle response mapping and pagination calculation
   const handleResponse = (res: any, isNewSearch: boolean = false): void => {
     //Mapping each gif to singleGif
@@ -103,8 +99,8 @@ const GiphyMain = (): JSX.Element => {
         currentPage: currentPage,
       },
     };
-    console.log('Items:', items);
-    console.log('Formed response:', mappedResponse);
+    //console.log('Items:', items);
+    //console.log('Formed response:', mappedResponse);
     //Store the first limit to currentCountPos
     setGifResponse(mappedResponse);
     
@@ -121,12 +117,12 @@ const GiphyMain = (): JSX.Element => {
   //Function the button calls with qury
   const doSearch = async (q: string): Promise<void> => {
     const res = await searchGifs(q, resultLimit, rating, lowContrast);
-    console.log('Input items: ', resultLimit, rating, lowContrast);
+    //console.log('Input items: ', resultLimit, rating, lowContrast);
     handleResponse(res, true);
   };
 
   const handlePageChange = async (q: string, selectedPage?: number): Promise<void> => {
-    console.log('current vars: ', q, selectedPage);
+    //console.log('current vars: ', q, selectedPage);
     setLoading(true);
     try {
       let limit = gifResponse.pagination.limit;
