@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import styles from './GiphyMain.module.scss';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography, useMediaQuery, Autocomplete, Checkbox, FormGroup, FormControlLabel, Skeleton } from '@mui/material';
+import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography, useMediaQuery, Checkbox, FormGroup, FormControlLabel, Skeleton, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { ContentCopy, OpenInNew, MoreVert, Close } from '@mui/icons-material';
 import { searchGifs } from '../../services';
@@ -226,26 +226,38 @@ const GiphyMain = (): JSX.Element => {
             </div>
             
             <div className={styles.moreOptions}>
-              <Autocomplete
-                options={["10", "20", "30", "40", "50"]}
-                value={resultLimit.toString()}
-                onChange={(event, value) => {
-                  const limit = parseInt(value || "10");
-                  setResultLimit(Math.min(50, limit));
-                }}
-                renderInput={(params) => <TextField {...params} label="Per Page" sx={{ minWidth: 120 }} />}
-              />
-              <Autocomplete
-                options={[" 🟩 G", "🟨 PG", "🟧 PG-13", " 🌶️ R"]}
-                value={rating}
-                onChange={(event, value) => {
-                  // Remove emoji before setting the rating
-                  const cleanValue = (value || "🟩 G").replace(/[^\w\s-]/g, '').trim();
-                  const properFormat = cleanValue.toLowerCase();
-                  setRating(properFormat);
-                }}
-                renderInput={(params) => <TextField {...params} label="Rating" sx={{ minWidth: 150 }} />}
-              />
+              <FormControl sx={{ minWidth: 120 }}>
+                <InputLabel>Per Page</InputLabel>
+                <Select
+                  value={resultLimit.toString()}
+                  label="Per Page"
+                  onChange={(event) => {
+                    const limit = parseInt(event.target.value);
+                    setResultLimit(Math.min(50, limit));
+                  }}
+                >
+                  <MenuItem value="10">10</MenuItem>
+                  <MenuItem value="20">20</MenuItem>
+                  <MenuItem value="30">30</MenuItem>
+                  <MenuItem value="40">40</MenuItem>
+                  <MenuItem value="50">50</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl sx={{ minWidth: 150 }}>
+                <InputLabel>Rating</InputLabel>
+                <Select
+                  value={rating}
+                  label="Rating"
+                  onChange={(event) => {
+                    setRating(event.target.value);
+                  }}
+                >
+                  <MenuItem value="g">🟩 G</MenuItem>
+                  <MenuItem value="pg">🟨 PG</MenuItem>
+                  <MenuItem value="pg-13">🟧 PG-13</MenuItem>
+                  <MenuItem value="r">🌶️ R</MenuItem>
+                </Select>
+              </FormControl>
               <FormGroup>
                 <FormControlLabel control={<Checkbox />} label="Low Contrast" onChange={(event) => setLowContrast((event.target as HTMLInputElement).checked)} />
               </FormGroup>

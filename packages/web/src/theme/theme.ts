@@ -163,7 +163,26 @@ const components = {
         color: colors.text.primary,
       },
     },
-  }
+  },
+  MuiMenuItem: {
+    styleOverrides: {
+      root: {
+        color: 'black',
+        backgroundColor: 'white',
+        '&:hover': {
+          backgroundColor: '#f0f0f0',
+        },
+        '&.Mui-selected': {
+          backgroundColor: '#ffff00',
+          color: 'black',
+          '&:hover': {
+            backgroundColor: '#ffff00',
+            color: 'black',
+          },
+        },
+      },
+    },
+  },
 };
 
 const theme = createTheme({
