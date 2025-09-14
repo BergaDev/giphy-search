@@ -1,55 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './GiphyMain.module.scss';
-import axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import { IconButton, ImageList, ImageListItem, ImageListItemBar, Alert, Snackbar, Modal, Box, Typography, useMediaQuery, Autocomplete, Checkbox, FormGroup, FormControlLabel, Skeleton } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { ContentCopy, OpenInNew, MoreVert, Close } from '@mui/icons-material';
-
-//Part of searchReponse
-//Object reduced for simplicity
-interface singleGif {
-    id: string;
-    images: {
-        fixed_height: {
-            url: string;
-        };
-        original: {
-            url: string;
-        };
-    };
-    title: string;
-}
-
-//Main API response 
-interface searchResponseGiphy {
-    data: singleGif[];
-    pagination: {
-        limit: number;
-        count: number;
-        total_count: number;
-        offset: number;
-        pages?: number;
-        currentPage?: number;
-    };
-}
-
-const url = 'https://api.giphy.com/v1/gifs/search';
-const APISearch = async (query: string, limit: number, rating: string, lowContrast?: boolean, offset?: number): Promise<searchResponseGiphy> => {
-  const { data } = await axios.get(url, {
-  params: {
-    api_key: import.meta.env.REACT_APP_GIPHY_SEARCH,
-    q: query,
-    limit: limit ||25,
-    rating: rating || 'g',
-    remove_low_contrast: lowContrast || false,
-    offset: offset || 0,
-  },
-});
-return data;
-};
+import { searchGifs } from '../../services';
+import { singleGif, searchResponseGiphy } from '../../types';
 
 const GiphyMain = (): JSX.Element => {
   const [query, setQuery] = useState('');
@@ -111,7 +69,10 @@ const GiphyMain = (): JSX.Element => {
     //Changed to pass all images in array, need to impliment some form of selection
     const items: singleGif[] = res.data.map((item) => ({
       id: item.id,
-      images: item.images,
+      images: {
+        fixed_height: item.images.fixed_height,
+        original: item.images.original
+      },
       title: item.title || 'No title provided',
     }));
     //Calculate pages and current page
@@ -153,7 +114,7 @@ const GiphyMain = (): JSX.Element => {
 
   //Function the button calls with qury
   const doSearch = async (q: string): Promise<void> => {
-    const res = await APISearch(q, resultLimit, rating, lowContrast);
+    const res = await searchGifs(q, resultLimit, rating, lowContrast);
     console.log('Input items: ', resultLimit, rating, lowContrast);
     handleResponse(res, true);
   };
@@ -168,7 +129,7 @@ const GiphyMain = (): JSX.Element => {
       if (selectedPage !== undefined && selectedPage !== null) {
         offset = (selectedPage - 1) * resultLimit;
       }
-      const newResponse = await APISearch(q, limit, rating, lowContrast, offset);
+      const newResponse = await searchGifs(q, limit, rating, lowContrast, offset);
       handleResponse(newResponse, false);
     } finally {
       setLoading(false);
@@ -345,50 +306,31 @@ const GiphyMain = (): JSX.Element => {
                 </div>
                 {/* GIF Previews */}
                 <ImageList sx={{ width: '100%' }} variant="masonry" cols={cols} gap={8}>
-                    {loading ? (
-                        //loading animation items
-                        Array.from({ length: resultLimit }, (_, index) => (
-                            <ImageListItem key={`skeleton-${index}`}>
-                                <Skeleton 
-                                    variant="rectangular" 
-                                    width="100%" 
-                                    height={250}
-                                    sx={{ borderRadius: 1 }}
-                                />
-                                <Box sx={{ p: 1 }}>
-                                    <Skeleton variant="text" width="80%" height={20} />
-                                    <Skeleton variant="text" width="60%" height={16} sx={{ mt: 0.5 }} />
-                                </Box>
-                            </ImageListItem>
-                        ))
-                    ) : (
-                        //acutal gif 
-                        gifResponse.data.map((item) => (
-                            <ImageListItem key={item.id}>
-                            <img
-                                src={item.images.fixed_height.url}
-                                alt={item.title}
-                                title={item.title}
-                                loading="lazy"
-                                onClick={() => openImageModal(item.images.original.url)}
-                                style={{ cursor: 'pointer', width: '100%', height: 'auto', display: 'block', borderRadius: 4 }}
-                            />
-                            <ImageListItemBar 
+                    {gifResponse.data.map((item) => (
+                        <ImageListItem key={item.id}>
+                        <img
+                            src={item.images.fixed_height.url}
+                            alt={item.title}
                             title={item.title}
-                            actionIcon={
-                                <>
-                                    <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
-                                        <ContentCopy />
-                                    </IconButton>
-                                    <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
-                                        <OpenInNew />
-                                    </IconButton>
-                                </>
-                            }
-                            />
-                            </ImageListItem>
-                        ))
-                    )}
+                            loading="lazy"
+                            onClick={() => openImageModal(item.images.fixed_height.url)}
+                            style={{ cursor: 'pointer', width: '100%', height: 'auto', display: 'block', borderRadius: 4 }}
+                        />
+                        <ImageListItemBar 
+                        title={item.title}
+                        actionIcon={
+                            <>
+                                <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
+                                    <ContentCopy />
+                                </IconButton>
+                                <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
+                                    <OpenInNew />
+                                </IconButton>
+                            </>
+                        }
+                        />
+                        </ImageListItem>
+                    ))}
                 </ImageList>
                 </>
               );
