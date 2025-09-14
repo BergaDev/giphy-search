@@ -364,7 +364,7 @@ const GiphyMain = (): JSX.Element => {
                                                 alt={item.title}
                                                 title={item.title}
                                                 loading="lazy"
-                                                onClick={() => openImageModal(item.images.original.url)}
+                                                onClick={() => handleOpen(item.images.original.url)}
                                                 style={{ cursor: 'pointer', width: '100%', height: 'auto', display: 'block', borderRadius: 4 }}
                                             />
                                             <ImageListItemBar 
@@ -374,7 +374,7 @@ const GiphyMain = (): JSX.Element => {
                                                         <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
                                                             <ContentCopy />
                                                         </IconButton>
-                                                        <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
+                                                        <IconButton color="inherit" onClick={() => handleOpen(item.images.original.url)}>
                                                             <OpenInNew />
                                                         </IconButton>
                                                     </>
