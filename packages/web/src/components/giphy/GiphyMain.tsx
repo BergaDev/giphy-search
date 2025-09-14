@@ -33,6 +33,8 @@ const GiphyMain = (): JSX.Element => {
   //Modal control for image preview 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+  //Load states
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
   const modalStyle = {
     position: 'absolute' as const,
@@ -55,6 +57,10 @@ const GiphyMain = (): JSX.Element => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setModalImageUrl(null);
+  };
+
+  const handleImageLoad = (imageId: string) => {
+    setLoadedImages(prev => new Set(prev).add(imageId));
   };
   //Page switcher
   const [pageWindowStart, setPageWindowStart] = useState(0);
@@ -119,7 +125,6 @@ const GiphyMain = (): JSX.Element => {
     handleResponse(res, true);
   };
 
-
   const handlePageChange = async (q: string, selectedPage?: number): Promise<void> => {
     console.log('current vars: ', q, selectedPage);
     setLoading(true);
@@ -180,6 +185,7 @@ const GiphyMain = (): JSX.Element => {
       },
     });
     setPageWindowStart(0);
+    setLoadedImages(new Set());
   };
 
   //Hide or show the extra options 
@@ -306,31 +312,80 @@ const GiphyMain = (): JSX.Element => {
                 </div>
                 {/* GIF Previews */}
                 <ImageList sx={{ width: '100%' }} variant="masonry" cols={cols} gap={8}>
-                    {gifResponse.data.map((item) => (
-                        <ImageListItem key={item.id}>
-                        <img
-                            src={item.images.fixed_height.url}
-                            alt={item.title}
-                            title={item.title}
-                            loading="lazy"
-                            onClick={() => openImageModal(item.images.fixed_height.url)}
-                            style={{ cursor: 'pointer', width: '100%', height: 'auto', display: 'block', borderRadius: 4 }}
-                        />
-                        <ImageListItemBar 
-                        title={item.title}
-                        actionIcon={
-                            <>
-                                <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
-                                    <ContentCopy />
-                                </IconButton>
-                                <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
-                                    <OpenInNew />
-                                </IconButton>
-                            </>
-                        }
-                        />
-                        </ImageListItem>
-                    ))}
+                    {loading ? (
+                        //Loading skeleton
+                        Array.from({ length: resultLimit }, (_, index) => (
+                            <ImageListItem key={`skeleton-${index}`}>
+                                <Skeleton 
+                                    variant="rectangular" 
+                                    width="100%" 
+                                    height={250}
+                                    sx={{ borderRadius: 1 }}
+                                />
+                                <Box sx={{ p: 1 }}>
+                                    <Skeleton variant="text" width="80%" height={20} />
+                                    <Skeleton variant="text" width="60%" height={16} sx={{ mt: 0.5 }} />
+                                </Box>
+                            </ImageListItem>
+                        ))
+                    ) : (
+                        //actual gif items
+                        gifResponse.data.map((item) => {
+                            const isImageLoaded = loadedImages.has(item.id);
+                            return (
+                                <ImageListItem key={item.id}>
+                                    {!isImageLoaded ? (
+                                        //Show skeleton until image loads
+                                        <>
+                                            <Skeleton 
+                                                variant="rectangular" 
+                                                width="100%" 
+                                                height={250}
+                                                sx={{ borderRadius: 1 }}
+                                            />
+                                            <Box sx={{ p: 1 }}>
+                                                <Skeleton variant="text" width="80%" height={20} />
+                                                <Skeleton variant="text" width="60%" height={16} sx={{ mt: 0.5 }} />
+                                            </Box>
+                                        </>
+                                    ) : (
+                                        //Show actual image
+                                        <>
+                                            <img
+                                                src={item.images.fixed_height.url}
+                                                alt={item.title}
+                                                title={item.title}
+                                                loading="lazy"
+                                                onClick={() => openImageModal(item.images.original.url)}
+                                                style={{ cursor: 'pointer', width: '100%', height: 'auto', display: 'block', borderRadius: 4 }}
+                                            />
+                                            <ImageListItemBar 
+                                                title={item.title}
+                                                actionIcon={
+                                                    <>
+                                                        <IconButton color="inherit" onClick={() => handleCopy(item.images.fixed_height.url)}>
+                                                            <ContentCopy />
+                                                        </IconButton>
+                                                        <IconButton color="inherit" onClick={() => handleOpen(item.images.fixed_height.url)}>
+                                                            <OpenInNew />
+                                                        </IconButton>
+                                                    </>
+                                                }
+                                            />
+                                        </>
+                                    )}
+                                    {/* Imge for loading */}
+                                    <img
+                                        src={item.images.fixed_height.url}
+                                        alt=""
+                                        style={{ display: 'none' }}
+                                        onLoad={() => handleImageLoad(item.id)}
+                                        onError={() => handleImageLoad(item.id)} //Add to avoid failed image
+                                    />
+                                </ImageListItem>
+                            );
+                        })
+                    )}
                 </ImageList>
                 </>
               );
